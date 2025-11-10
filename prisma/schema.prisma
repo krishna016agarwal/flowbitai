@@ -1,0 +1,93 @@
+// prisma/schema.prisma
+generator tsnode {
+  provider = "ts-node"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Vendor {
+  id                String    @id @default(uuid())
+  vendorName        String?
+  vendorPartyNumber String?
+  vendorAddress     String?
+  vendorTaxId       String?
+  invoices          Invoice[]
+  createdAt         DateTime  @default(now())
+}
+
+model Customer {
+  id              String    @id @default(uuid())
+  customerName    String?
+  customerAddress String?
+  invoices        Invoice[]
+  createdAt       DateTime  @default(now())
+}
+
+model Payment {
+  id                 String    @id @default(uuid())
+  dueDate            DateTime?
+  paymentTerms       String?
+  bankAccountNumber  String?
+  BIC                String?
+  accountName        String?
+  netDays            Int?
+  discountPercentage String?
+  discountDays       Int?
+  discountDueDate    DateTime?
+  discountedTotal    Float?
+  invoices           Invoice[] // ✅ One payment can belong to many invoices
+  createdAt          DateTime  @default(now())
+}
+
+model Invoice {
+  id             String     @id @default(uuid())
+  invoiceNumber  String?    @unique
+  invoiceDate    DateTime?
+  deliveryDate   DateTime?
+  subTotal       Float?
+  totalTax       Float?
+  invoiceTotal   Float?
+  currencySymbol String?
+  vendorId       String?
+  vendor         Vendor?    @relation(fields: [vendorId], references: [id])
+  customerId     String?
+  customer       Customer?  @relation(fields: [customerId], references: [id])
+  paymentId      String?
+  payment        Payment?   @relation(fields: [paymentId], references: [id])
+  lineItems      LineItem[]
+  files          File[] // ✅ Changed to one-to-many
+  createdAt      DateTime   @default(now())
+}
+
+model LineItem {
+  id           String    @id @default(uuid())
+  srNo         Int?
+  description  String?
+  quantity     Float?
+  unitPrice    Float?
+  totalPrice   Float?
+  Sachkonto    String?
+  BUSchluessel String?
+  invoiceId    String? // ✅ Foreign key
+  invoice      Invoice?  @relation(fields: [invoiceId], references: [id]) // Many-to-one
+  createdAt    DateTime? @default(now())
+}
+
+model File {
+  id        String    @id @default(uuid())
+  name      String
+  filePath  String
+  fileType  String?
+  status    String?
+  invoiceId String?
+  invoice   Invoice?  @relation(fields: [invoiceId], references: [id]) // ✅ Many-to-one
+  createdAt DateTime?
+  updatedAt DateTime?
+}
